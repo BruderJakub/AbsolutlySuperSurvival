@@ -36,7 +36,7 @@ app.get('/profile/:profileID', (req, res) => {
     }
   });
 
-  db.all('SELECT * FROM profile ORDER BY ROWID ASC LIMIT ?', [profileID], (err, rows) => {
+  db.all('SELECT * FROM profile WHERE id = ?', [profileID], (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
     } else {
