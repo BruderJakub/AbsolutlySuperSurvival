@@ -8,9 +8,33 @@
 <body>
     <h1>Profile</h1>
     <p>This is your profile page.</p>
-    <button>Profile 1</button>
-    <button>Profile 2</button>
-    <button>Profile 3</button>
+    <div id="profile-data"></div>
     <button onclick="window.location.href='../index.html'">Back to Home</button>
 </body>
+
+<script>
+    async function fetchProfileData() {
+        try {
+            const response = await fetch('/profile');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data = await response.json();
+            const profileData = document.getElementById('profile-data');
+            profileData.replaceChildren();
+
+            data.profile.forEach((profile) => {
+                const profileElement = document.createElement('p');
+                profileElement.textContent = `${profile.name} - Level ${profile.level} - Money: ${profile.money}`;
+                profileData.appendChild(profileElement);
+            });
+            console.log(data);
+        } catch (error) {
+            console.error('There has been a problem with your fetch operation:', error);
+        }
+    }
+
+    // Call the function when the page loads
+    window.onload = fetchProfileData;
+</script>
 </html>
