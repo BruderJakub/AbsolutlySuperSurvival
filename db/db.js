@@ -28,6 +28,7 @@ db.serialize(() => {
     db.run(
         'CREATE TABLE IF NOT EXISTS character (' +
         'id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
+        'picture TEXT NOT NULL, ' +
         'name TEXT NOT NULL, ' +
         'level INTEGER NOT NULL, ' +
         'unlocked INTEGER NOT NULL, ' +
