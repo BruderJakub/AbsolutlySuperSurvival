@@ -42,8 +42,12 @@ async function getSingleProfileData(profileID) {
     }
 }
 
+async function updateProfileData() {
+    fetchProfileData();
+    getSingleProfileData(1);
+    getSingleProfileData(2);
+    getSingleProfileData(3);
+}
+
 // Call the function when the page loads
-window.onload = fetchProfileData;
-window.onload = getSingleProfileData(1);
-window.onload = getSingleProfileData(2);
-window.onload = getSingleProfileData(3);
+window.onload = updateProfileData;
