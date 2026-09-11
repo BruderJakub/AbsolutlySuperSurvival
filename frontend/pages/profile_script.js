@@ -30,7 +30,7 @@ async function getSingleProfileData(profileID) {
         const data = await response.json();
         const profileData = document.getElementById(`profile-data-${profileID}`);
         profileData.replaceChildren();
-
+        
         data.profile.forEach((profile) => {
             const profileElement = document.createElement('p');
             profileElement.textContent = `${profile.name} - Level ${profile.level} - Money: ${profile.money}`;
