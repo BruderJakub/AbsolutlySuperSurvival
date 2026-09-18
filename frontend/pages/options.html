@@ -6,6 +6,11 @@
     <title>Document</title>
 </head>
 <body>
+    <header>
+        <nav>
+            <button id="backButton">Back</button>
+        </nav>
+    </header>
     <h1>Options</h1>
     <p>Here you can adjust the game settings.</p>
     <form>
@@ -29,4 +34,18 @@
         </select>
     </form>
 </body>
+<script>
+
+    let backend;
+
+    if (localStorage.getItem("profile") === "NotSet") {
+        backend = "../index.html";
+    } else {
+        backend = "./game.html";
+    }
+    document.getElementById("backButton").onclick = () => {
+        window.location.href = backend;
+    };
+
+</script>
 </html>
