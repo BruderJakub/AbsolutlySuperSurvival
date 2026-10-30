@@ -1,32 +1,32 @@
-let profileId = localStorage.getItem("profile");
-document.getElementById("selectedProfileId").textContent = profileId;
+async function updateProfileData() {
+    const profileId = localStorage.getItem("profile");
 
-async function getSingleProfileData(profileID) {
+    if (!profileId) {
+        console.error("No profile selected.");
+        return;
+    }
+
     try {
-        const response = await fetch(`/profile/${profileID}`);
+        const response = await fetch(`/profile/${profileId}`);
+
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            throw new Error("Could not load profile");
         }
+
         const data = await response.json();
-        const profileData = document.getElementById(`profile-data`);
-        profileData.replaceChildren();
-        
-        data.profile.forEach((profile) => {
-            const profileElement = document.createElement('p');
-            profileElement.textContent = `${profile.name} - Level ${profile.level} - Money: ${profile.money}`;
-            profileData.appendChild(profileElement);
-        });
-        console.log(data);
+        const profile = data.profile[0];
+
+        document.getElementById("profileName").textContent =
+            `Name: ${profile.name}`;
+
+        document.getElementById("profileLevel").textContent =
+            `Level: ${profile.level}`;
+
+        document.getElementById("profileMoney").textContent =
+            `Money: ${profile.money}`;
     } catch (error) {
-        console.error('There has been a problem with your fetch operation:', error);
+        console.error("Error loading profile:", error);
     }
 }
 
-async function updateProfileData() {
-    getSingleProfileData(1);
-    getSingleProfileData(2);
-    getSingleProfileData(3);
-}
-
-// Call the function when the page loads
 window.onload = updateProfileData;
