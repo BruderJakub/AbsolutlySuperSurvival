@@ -12,6 +12,12 @@ const db = new sqlite3.Database('./db.sqlite', (err) => {
 
 db.serialize(() => {
 
+    // Reset development data before recreating the schema.
+    db.run('DROP TABLE IF EXISTS enemies');
+    db.run('DROP TABLE IF EXISTS character');
+    db.run('DROP TABLE IF EXISTS stage');
+    db.run('DROP TABLE IF EXISTS profile');
+
     // PROFILE
 
     db.run(
