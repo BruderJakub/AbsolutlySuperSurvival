@@ -74,7 +74,8 @@ db.serialize(() => {
 
     values = [
         ['example', 1, 1],
-        ['example2', 1, 1]
+        ['example2', 1, 1],
+        ['example3', 1, 1]
     ];
 
     values.forEach(value => {
@@ -84,11 +85,13 @@ db.serialize(() => {
 
     // CHARACTER
 
-    query = 'INSERT INTO character (name, level, unlocked, profile_id) VALUES (?, ?, ?, ?)';
+    query = 'INSERT INTO character (picture, name, level, unlocked, profile_id) VALUES (?, ?, ?, ?, ?)';
 
     values = [
-        ['example', 1, 1, 1],
-        ['example2', 1, 0, 1]
+        ['example', 'example', 1, 1, 1],
+        ['example2', 'example2', 1, 0, 1],
+        ['example3', 'example3', 1, 1, 2],
+        ['example4', 'example4', 1, 0, 3]
     ];
 
     values.forEach(value => {

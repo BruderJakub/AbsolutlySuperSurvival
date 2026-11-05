@@ -115,7 +115,27 @@ app.get('/profile/:profileID/money', (req, res) => {
   db.close();
 });
 
+app.get('/character/:characterID', (req, res) => {
+  const { characterID } = req.params;
+  const db = new sqlite3.Database(path.join(__dirname, '..', 'db', 'db.sqlite'), (err) => {
+    if (err) {
+      console.error('Error opening database:', err.message);
+      res.status(500).json({ error: 'Failed to open database' });
+    }
+  });
 
+  db.all('SELECT * FROM character WHERE profile_id = ?', [characterID], (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+    } else {
+      res.json({
+        character: rows
+      });
+    }
+  });
+
+  db.close();
+});
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
