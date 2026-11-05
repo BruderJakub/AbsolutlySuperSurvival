@@ -47,12 +47,45 @@ async function getCharacterData(profileID) {
             characterElement.textContent =
                 `${character.name} - Level ${character.level} - Unlocked: ${character.unlocked}`;
             characterElement.disabled = !character.unlocked; // Disable button if character is not unlocked
+            characterElement.addEventListener('click', () => selectCharacter(character.id));
             characterButtons.appendChild(characterElement);
         });
         console.log(data);
     } catch (error) {
         console.error('There has been a problem with your fetch operation:', error);
     }
+}
+
+async function unlockCharacter(characterID) {
+    const response = await fetch(`/character/${characterID}/unlock`, {
+        method: 'PATCH'
+    });
+
+    if (!response.ok) {
+        throw new Error('Could not unlock character');
+    }
+
+    await getCharacterData(localStorage.getItem('profile'));
+}
+
+async function updateCharacterLevel(characterID, level) {
+    const response = await fetch(`/character/${characterID}/level`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ level })
+    });
+
+    if (!response.ok) {
+        throw new Error('Could not update character level');
+    }
+
+    await getCharacterData(localStorage.getItem('profile'));
+}
+
+function selectCharacter(characterID) {
+    console.log(`Selected character ${characterID}`);
 }
 
 window.onload = updateProfileData;
