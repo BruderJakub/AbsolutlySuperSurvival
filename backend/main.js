@@ -304,7 +304,7 @@ app.patch('/profile/:profileID/money', (req, res) => {
   );
 });
 
-// Chest
+// Chest opening endpoint
 
 app.post('/profile/:profileID/chest', (req, res) => {
   const { profileID } = req.params;

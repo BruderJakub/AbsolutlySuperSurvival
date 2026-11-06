@@ -15,6 +15,9 @@ db.serialize(() => {
     db.run('PRAGMA foreign_keys = ON');
 
     // Reset development data before recreating the schema.
+    db.run('DROP TABLE IF EXISTS profile_stage');
+    db.run('DROP TABLE IF EXISTS stage_enemy');
+    db.run('DROP TABLE IF EXISTS enemy_type');
     db.run('DROP TABLE IF EXISTS enemies');
     db.run('DROP TABLE IF EXISTS profile_character');
     db.run('DROP TABLE IF EXISTS character');
@@ -57,27 +60,53 @@ db.serialize(() => {
 
     // STAGE
 
+    // STAGES
+
     db.run(
         'CREATE TABLE IF NOT EXISTS stage (' +
         'id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
-        'name TEXT NOT NULL, ' +
-        'unlocked INTEGER NOT NULL, ' +
-        'profile_id INTEGER NOT NULL, ' +
-        'FOREIGN KEY (profile_id) REFERENCES profile(id)' +
+        'stage_number INTEGER NOT NULL UNIQUE, ' +
+        'name TEXT NOT NULL' +
         ')'
     );
 
-    // ENEMIES
+    // ENEMY TYPES
 
     db.run(
-        'CREATE TABLE IF NOT EXISTS enemies (' +
+        'CREATE TABLE IF NOT EXISTS enemy_type (' +
         'id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
-        'name TEXT NOT NULL, ' +
-        'health INTEGER NOT NULL, ' +
-        'damage INTEGER NOT NULL, ' +
-        'defence INTEGER NOT NULL, ' +
+        'name TEXT NOT NULL UNIQUE, ' +
+        'picture TEXT NOT NULL, ' +
+        'health INTEGER NOT NULL CHECK (health > 0), ' +
+        'damage INTEGER NOT NULL CHECK (damage >= 0), ' +
+        'defence INTEGER NOT NULL CHECK (defence >= 0)' +
+        ')'
+    );
+
+    // ENEMIES IN EACH STAGE
+
+    db.run(
+        'CREATE TABLE IF NOT EXISTS stage_enemy (' +
         'stage_id INTEGER NOT NULL, ' +
-        'FOREIGN KEY (stage_id) REFERENCES stage(id)' +
+        'enemy_type_id INTEGER NOT NULL, ' +
+        'amount INTEGER NOT NULL CHECK (amount > 0), ' +
+        'PRIMARY KEY (stage_id, enemy_type_id), ' +
+        'FOREIGN KEY (stage_id) REFERENCES stage(id) ON DELETE CASCADE, ' +
+        'FOREIGN KEY (enemy_type_id) REFERENCES enemy_type(id) ON DELETE CASCADE' +
+        ')'
+    );
+
+    // STAGE PROGRESS PER PROFILE
+
+    db.run(
+        'CREATE TABLE IF NOT EXISTS profile_stage (' +
+        'profile_id INTEGER NOT NULL, ' +
+        'stage_id INTEGER NOT NULL, ' +
+        'unlocked INTEGER NOT NULL DEFAULT 0 CHECK (unlocked IN (0, 1)), ' +
+        'completed INTEGER NOT NULL DEFAULT 0 CHECK (completed IN (0, 1)), ' +
+        'PRIMARY KEY (profile_id, stage_id), ' +
+        'FOREIGN KEY (profile_id) REFERENCES profile(id) ON DELETE CASCADE, ' +
+        'FOREIGN KEY (stage_id) REFERENCES stage(id) ON DELETE CASCADE' +
         ')'
     );
 
@@ -123,13 +152,14 @@ db.serialize(() => {
     );
 
 
-    // STAGE
+    // STAGES
 
-    query = 'INSERT INTO stage (name, unlocked, profile_id) VALUES (?, ?, ?)';
+    query = 'INSERT INTO stage (stage_number, name) VALUES (?, ?)';
 
     values = [
-        ['example', 1, 1],
-        ['example2', 0, 1]
+        [1, 'Forest Entrance'],
+        [2, 'Dark Forest'],
+        [3, 'Forest Guardian']
     ];
 
     values.forEach(value => {
@@ -137,18 +167,44 @@ db.serialize(() => {
     });
 
 
-    // ENEMIES
+    // ENEMY TYPES
 
-    query = 'INSERT INTO enemies (name, health, damage, defence, stage_id) VALUES (?, ?, ?, ?, ?)';
+    query = 'INSERT INTO enemy_type (name, picture, health, damage, defence) VALUES (?, ?, ?, ?, ?)';
 
     values = [
-        ['example', 100, 20, 5, 1],
-        ['example2', 200, 30, 10, 1]
+        ['Slime', 'slime.png', 100, 20, 5],
+        ['Skeleton', 'skeleton.png', 150, 30, 10],
+        ['Forest Guardian', 'forest-guardian.png', 500, 60, 25]
     ];
 
     values.forEach(value => {
         db.run(query, value);
     });
+
+    // STAGE ENEMY COMPOSITIONS
+
+    query = 'INSERT INTO stage_enemy (stage_id, enemy_type_id, amount) VALUES (?, ?, ?)';
+
+    values = [
+        [1, 1, 5],
+        [1, 2, 2],
+        [2, 1, 3],
+        [2, 2, 6],
+        [3, 2, 4],
+        [3, 3, 1]
+    ];
+
+    values.forEach(value => {
+        db.run(query, value);
+    });
+
+    // Give every profile access to the first stage only.
+
+    db.run(
+        'INSERT INTO profile_stage (profile_id, stage_id, unlocked, completed) ' +
+        'SELECT profile.id, stage.id, CASE WHEN stage.stage_number = 1 THEN 1 ELSE 0 END, 0 ' +
+        'FROM profile CROSS JOIN stage'
+    );
 
 });
 
