@@ -3,9 +3,22 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const app = express();
 const port = 3000;
+const { randomInt } = require('crypto'); // For generating random int
 
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 app.use(express.json());
+
+
+// Function to calculate chest reward based on level
+
+function calculateChestReward(level) {
+  
+  const baseReward = level * 100;
+  const minimum = Math.ceil(baseReward * 0.75);
+  const maximum = Math.floor(baseReward * 1.25);
+
+  return randomInt(minimum, maximum + 1);
+}
 
 // API endpoint to get all profiles
 // API get all profiles
@@ -287,6 +300,52 @@ app.patch('/profile/:profileID/money', (req, res) => {
       }
 
       db.close();
+    }
+  );
+});
+
+// Chest
+
+app.post('/profile/:profileID/chest', (req, res) => {
+  const { profileID } = req.params;
+  const db = new sqlite3.Database(
+    path.join(__dirname, '..', 'db', 'db.sqlite')
+  );
+
+  db.get(
+    'SELECT level FROM profile WHERE id = ?',
+    [profileID],
+    (err, profile) => {
+      if (err) {
+        db.close();
+        return res.status(500).json({ error: 'Failed to load profile' });
+      }
+
+      if (!profile) {
+        db.close();
+        return res.status(404).json({ error: 'Profile not found' });
+      }
+
+      const reward = calculateChestReward(profile.level);
+
+      db.run(
+        'UPDATE profile SET money = money + ? WHERE id = ?',
+        [reward, profileID],
+        function (updateError) {
+          db.close();
+
+          if (updateError) {
+            return res.status(500).json({
+              error: 'Failed to add chest reward'
+            });
+          }
+
+          res.json({
+            reward,
+            message: 'Chest opened successfully'
+          });
+        }
+      );
     }
   );
 });
