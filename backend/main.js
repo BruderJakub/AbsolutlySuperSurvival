@@ -350,6 +350,142 @@ app.post('/profile/:profileID/chest', (req, res) => {
   );
 });
 
+app.get('/stage', (req, res) => {
+  const db = new sqlite3.Database(path.join(__dirname, '..', 'db', 'db.sqlite'), (err) => {
+    if (err) {
+      console.error('Error opening database:', err.message);
+      res.status(500).json({ error: 'Failed to open database' });
+    }
+  });
+
+// Fetch all stages with their enemies // Hilfe von AI da SELECTS / JOINS
+/* 
+     .---.
+    |      \
+    | () () |
+     \  ^  /
+      |||||
+    .-" "-.
+   / |   | \
+  |  |   |  |
+
+*/
+
+  db.all(
+    'SELECT stage.id AS stage_id, stage.stage_number, stage.name AS stage_name, ' +
+    'enemy_type.id AS enemy_type_id, enemy_type.name AS enemy_name, ' +
+    'enemy_type.picture, enemy_type.health, enemy_type.damage, enemy_type.defence, ' +
+    'stage_enemy.amount ' +
+    'FROM stage ' +
+    'LEFT JOIN stage_enemy ON stage_enemy.stage_id = stage.id ' +
+    'LEFT JOIN enemy_type ON enemy_type.id = stage_enemy.enemy_type_id ' +
+    'ORDER BY stage.stage_number, enemy_type.id',
+    (err, rows) => {
+    if (err) {
+      console.error('Error fetching stages:', err.message);
+      res.status(500).json({ error: 'Failed to fetch stages' });
+    } else {
+      const stages = [];
+
+      rows.forEach((row) => {
+        let stage = stages.find((item) => item.id === row.stage_id);
+
+        if (!stage) {
+          stage = {
+            id: row.stage_id,
+            stageNumber: row.stage_number,
+            name: row.stage_name,
+            enemies: []
+          };
+          stages.push(stage);
+        }
+
+        if (row.enemy_type_id !== null) {
+          stage.enemies.push({
+            id: row.enemy_type_id,
+            name: row.enemy_name,
+            picture: row.picture,
+            health: row.health,
+            damage: row.damage,
+            defence: row.defence,
+            amount: row.amount
+          });
+        }
+      });
+
+      res.json(stages);
+    }
+    db.close();
+  });
+});
+
+app.get('/stage/:stageID', (req, res) => {
+  const { stageID } = req.params;
+  const db = new sqlite3.Database(path.join(__dirname, '..', 'db', 'db.sqlite'), (err) => {
+    if (err) {
+      console.error('Error opening database:', err.message);
+      res.status(500).json({ error: 'Failed to open database' });
+    }
+  });
+
+// Fetch a specific stage by ID, including its enemies // Hilfe von AI da SELECTS / JOINS 
+/* 
+     .---.
+    |      \
+    | () () |
+     \  ^  /
+      |||||
+    .-" "-.
+   / |   | \
+  |  |   |  |
+
+*/
+
+  db.all(
+    'SELECT stage.id AS stage_id, stage.stage_number, stage.name AS stage_name, ' +
+    'enemy_type.id AS enemy_type_id, enemy_type.name AS enemy_name, ' +
+    'enemy_type.picture, enemy_type.health, enemy_type.damage, enemy_type.defence, ' +
+    'stage_enemy.amount ' +
+    'FROM stage ' +
+    'LEFT JOIN stage_enemy ON stage_enemy.stage_id = stage.id ' +
+    'LEFT JOIN enemy_type ON enemy_type.id = stage_enemy.enemy_type_id ' +
+    'WHERE stage.id = ? ' +
+    'ORDER BY enemy_type.id',
+    [stageID],
+    (err, rows) => {
+    if (err) {
+      console.error('Error fetching stage:', err.message);
+      res.status(500).json({ error: 'Failed to fetch stage' });
+    } else if (rows.length === 0) {
+      res.status(404).json({ error: 'Stage not found' });
+    } else {
+      const stage = {
+        id: rows[0].stage_id,
+        stageNumber: rows[0].stage_number,
+        name: rows[0].stage_name,
+        enemies: []
+      };
+
+      rows.forEach((row) => {
+        if (row.enemy_type_id !== null) {
+          stage.enemies.push({
+            id: row.enemy_type_id,
+            name: row.enemy_name,
+            picture: row.picture,
+            health: row.health,
+            damage: row.damage,
+            defence: row.defence,
+            amount: row.amount
+          });
+        }
+      });
+
+      res.json(stage);
+    }
+    db.close();
+  });
+});
+
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
