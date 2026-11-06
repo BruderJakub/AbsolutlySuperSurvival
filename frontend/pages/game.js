@@ -96,4 +96,38 @@ function selectCharacter(characterID) {
     console.log(`Selected character ${characterID}`);
 }
 
+async function updateProfileLevel(level) {
+    const profileID = localStorage.getItem('profile');
+    const response = await fetch(`/profile/${profileID}/level`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ level })
+    });
+
+    if (!response.ok) {
+        throw new Error('Could not update profile level');
+    }
+
+    await updateProfileData();
+}
+
+async function updateProfileMoney(money) {
+    const profileID = localStorage.getItem('profile');
+    const response = await fetch(`/profile/${profileID}/money`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ money })
+    });
+
+    if (!response.ok) {
+        throw new Error('Could not update profile money');
+    }
+
+    await updateProfileData();
+}
+
 window.onload = updateProfileData;

@@ -8,7 +8,7 @@ app.use(express.static(path.join(__dirname, '..', 'frontend')));
 app.use(express.json());
 
 // API endpoint to get all profiles
-// API get
+// API get all profiles
 
 app.get('/profile', (req, res) => {
   const db = new sqlite3.Database(path.join(__dirname, '..', 'db', 'db.sqlite'), (err) => {
@@ -31,6 +31,8 @@ app.get('/profile', (req, res) => {
   db.close();
 });
 
+// API endpoint to get a specific profile by ID
+
 app.get('/profile/:profileID', (req, res) => {
   const { profileID } = req.params;
   const db = new sqlite3.Database(path.join(__dirname, '..', 'db', 'db.sqlite'), (err) => {
@@ -52,6 +54,7 @@ app.get('/profile/:profileID', (req, res) => {
 
   db.close();
 });
+
 
 app.get('/profile/:profileID/name', (req, res) => {
   const { profileID } = req.params;
@@ -187,17 +190,17 @@ app.patch('/character/:characterID/level' , (req, res) => {
     const profileID = req.query.profileID || req.body.profileID;
     const { level } = req.body;
 
-    if (!Number.isInteger(level) || level < 1) {
-      res.status(400).json({ error: 'Level must be a positive integer' });
-      return;
-    }
-
-    const db = new sqlite3.Database(path.join(__dirname, '..', 'db', 'db.sqlite'), (err) => {
-      if (err) {
-        console.error('Error opening database:', err.message);
-        res.status(500).json({ error: 'Failed to open database' });
+      if (!Number.isInteger(level) || level < 1) {
+        res.status(400).json({ error: 'Level must be a positive integer' });
+        return;
       }
-    });
+
+      const db = new sqlite3.Database(path.join(__dirname, '..', 'db', 'db.sqlite'), (err) => {
+        if (err) {
+          console.error('Error opening database:', err.message);
+          res.status(500).json({ error: 'Failed to open database' });
+        }
+      });
 
     db.run(
       'UPDATE profile_character SET level = ? WHERE character_id = ? AND profile_id = ?',
@@ -216,6 +219,78 @@ app.patch('/character/:characterID/level' , (req, res) => {
       }
     );
 });
+
+// API change profile level
+
+app.patch('/profile/:profileID/level', (req, res) => {
+  const { profileID } = req.params;
+  const { level } = req.body;
+
+  if (!Number.isInteger(level) || level < 1) {
+    res.status(400).json({ error: 'Level must be a positive integer' });
+    return;
+  }
+
+  const db = new sqlite3.Database(path.join(__dirname, '..', 'db', 'db.sqlite'), (err) => {
+    if (err) {
+      console.error('Error opening database:', err.message);
+      res.status(500).json({ error: 'Failed to open database' });
+    }
+  });
+
+  db.run(
+    'UPDATE profile SET level = ? WHERE id = ?',
+    [level, profileID],
+    function (err) {
+      if (err) {
+        console.error('Error updating profile level:', err.message);
+        res.status(500).json({ error: 'Failed to update profile level' });
+      } else if (this.changes === 0) {
+        res.status(404).json({ error: 'Profile not found' });
+      } else {
+        res.json({ message: 'Profile level updated successfully' });
+      }
+
+      db.close();
+    }
+  );
+});
+
+// API change profile money
+
+app.patch('/profile/:profileID/money', (req, res) => {
+  const { profileID } = req.params;
+  const { money } = req.body;
+  if (!Number.isInteger(money) || money < 0) {
+    res.status(400).json({ error: 'Money must be a non-negative integer' });
+    return;
+  }
+
+  const db = new sqlite3.Database(path.join(__dirname, '..', 'db', 'db.sqlite'), (err) => {
+    if (err) {
+      console.error('Error opening database:', err.message);
+      res.status(500).json({ error: 'Failed to open database' });
+    }
+  });
+
+  db.run(
+    'UPDATE profile SET money = ? WHERE id = ?',
+    [money, profileID],
+    function (err) {
+      if (err) {
+        console.error('Error updating profile money:', err.message);
+        res.status(500).json({ error: 'Failed to update profile money' });
+      } else if (this.changes === 0) {
+        res.status(404).json({ error: 'Profile not found' });
+      } else {
+        res.json({ message: 'Profile money updated successfully' });
+      }
+
+      db.close();
+    }
+  );
+});
+
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
