@@ -120,7 +120,7 @@ app.get('/profile/:profileID/money', (req, res) => {
 });
 
 app.get('/character/:characterID', (req, res) => {
-  const { characterID } = req.params;
+  const { characterID: profileID } = req.params;
   const db = new sqlite3.Database(path.join(__dirname, '..', 'db', 'db.sqlite'), (err) => {
     if (err) {
       console.error('Error opening database:', err.message);
@@ -128,13 +128,21 @@ app.get('/character/:characterID', (req, res) => {
     }
   });
 
-  db.all('SELECT * FROM character WHERE profile_id = ?', [characterID], (err, rows) => {
+  db.all(
+    'SELECT character.id, character.picture, character.name, ' +
+    'profile_character.level, profile_character.unlocked ' +
+    'FROM character ' +
+    'JOIN profile_character ON profile_character.character_id = character.id ' +
+    'WHERE profile_character.profile_id = ?',
+    [profileID],
+    (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
     } else {
       res.json({
         character: rows
-      });
+        }
+      );
     }
   });
 
@@ -146,6 +154,7 @@ app.get('/character/:characterID', (req, res) => {
 
 app.patch('/character/:characterID/unlock', (req, res) => {
   const { characterID } = req.params;
+  const profileID = req.query.profileID || req.body.profileID;
   const db = new sqlite3.Database(path.join(__dirname, '..', 'db', 'db.sqlite'), (err) => {
     if (err) {
       console.error('Error opening database:', err.message);
@@ -153,7 +162,10 @@ app.patch('/character/:characterID/unlock', (req, res) => {
     }
   });
 
-  db.run('UPDATE character SET unlocked = 1 WHERE id = ?', [characterID], function (err) {
+  db.run(
+    'UPDATE profile_character SET unlocked = 1 WHERE character_id = ? AND profile_id = ?',
+    [characterID, profileID],
+    function (err) {
     if (err) {
       console.error('Error updating character:', err.message);
       res.status(500).json({ error: 'Failed to update character' });
@@ -164,13 +176,15 @@ app.patch('/character/:characterID/unlock', (req, res) => {
     }
 
     db.close();
-  });
+    }
+  );
 });
 
 // API change character level
  
 app.patch('/character/:characterID/level' , (req, res) => {
     const { characterID } = req.params;
+    const profileID = req.query.profileID || req.body.profileID;
     const { level } = req.body;
 
     if (!Number.isInteger(level) || level < 1) {
@@ -185,7 +199,10 @@ app.patch('/character/:characterID/level' , (req, res) => {
       }
     });
 
-    db.run('UPDATE character SET level = ? WHERE id = ?', [level, characterID], function (err) {
+    db.run(
+      'UPDATE profile_character SET level = ? WHERE character_id = ? AND profile_id = ?',
+      [level, characterID, profileID],
+      function (err) {
       if (err) {
         console.error('Error updating character level:', err.message);
         res.status(500).json({ error: 'Failed to update character level' });
@@ -196,7 +213,8 @@ app.patch('/character/:characterID/level' , (req, res) => {
       }
 
       db.close();
-    });
+      }
+    );
 });
 
 app.listen(port, () => {

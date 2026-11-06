@@ -25,6 +25,8 @@ async function updateProfileData() {
         document.getElementById("profileMoney").textContent =
             `Money: ${profile.money}`;
 
+        document.getElementById("profileSlot").textContent = profile.slot;
+
         getCharacterData(profileId);
     } catch (error) {
         console.error("Error loading profile:", error);
@@ -57,8 +59,13 @@ async function getCharacterData(profileID) {
 }
 
 async function unlockCharacter(characterID) {
+    const profileID = localStorage.getItem('profile');
     const response = await fetch(`/character/${characterID}/unlock`, {
-        method: 'PATCH'
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ profileID })
     });
 
     if (!response.ok) {
@@ -69,12 +76,13 @@ async function unlockCharacter(characterID) {
 }
 
 async function updateCharacterLevel(characterID, level) {
+    const profileID = localStorage.getItem('profile');
     const response = await fetch(`/character/${characterID}/level`, {
         method: 'PATCH',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ level })
+        body: JSON.stringify({ level, profileID })
     });
 
     if (!response.ok) {

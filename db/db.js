@@ -1,8 +1,9 @@
+const path = require('path');
 // requiring the sqlite3 module
 const sqlite3 = require('sqlite3');
 
 // creating a database file
-const db = new sqlite3.Database('./db.sqlite', (err) => {
+const db = new sqlite3.Database(path.join(__dirname, 'db.sqlite'), (err) => {
     if (err) {
         console.error('Error opening database:', err.message);
     } else {
@@ -11,9 +12,11 @@ const db = new sqlite3.Database('./db.sqlite', (err) => {
 });
 
 db.serialize(() => {
+    db.run('PRAGMA foreign_keys = ON');
 
     // Reset development data before recreating the schema.
     db.run('DROP TABLE IF EXISTS enemies');
+    db.run('DROP TABLE IF EXISTS profile_character');
     db.run('DROP TABLE IF EXISTS character');
     db.run('DROP TABLE IF EXISTS stage');
     db.run('DROP TABLE IF EXISTS profile');
@@ -23,6 +26,7 @@ db.serialize(() => {
     db.run(
         'CREATE TABLE IF NOT EXISTS profile (' +
         'id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
+        'slot INTEGER NOT NULL UNIQUE CHECK (slot BETWEEN 1 AND 3), ' +
         'name TEXT NOT NULL, ' +
         'level INTEGER NOT NULL, ' +
         'money INTEGER NOT NULL' +
@@ -35,11 +39,19 @@ db.serialize(() => {
         'CREATE TABLE IF NOT EXISTS character (' +
         'id INTEGER PRIMARY KEY AUTOINCREMENT, ' +
         'picture TEXT NOT NULL, ' +
-        'name TEXT NOT NULL, ' +
-        'level INTEGER NOT NULL, ' +
-        'unlocked INTEGER NOT NULL, ' +
+        'name TEXT NOT NULL' +
+        ')'
+    );
+
+    db.run(
+        'CREATE TABLE IF NOT EXISTS profile_character (' +
+        'character_id INTEGER NOT NULL, ' +
         'profile_id INTEGER NOT NULL, ' +
-        'FOREIGN KEY (profile_id) REFERENCES profile(id)' +
+        'unlocked INTEGER NOT NULL, ' +
+        'level INTEGER NOT NULL, ' +
+        'PRIMARY KEY (character_id, profile_id), ' +
+        'FOREIGN KEY (character_id) REFERENCES character(id), ' +
+        'FOREIGN KEY (profile_id) REFERENCES profile(id) ON DELETE CASCADE' +
         ')'
     );
 
@@ -76,12 +88,12 @@ db.serialize(() => {
 
     // PROFILE
 
-    query = 'INSERT INTO profile (name, level, money) VALUES (?, ?, ?)';
+    query = 'INSERT INTO profile (slot, name, level, money) VALUES (?, ?, ?, ?)';
 
     values = [
-        ['example', 1, 1],
-        ['example2', 1, 1],
-        ['example3', 1, 1]
+        [1, 'example', 1, 1],
+        [2, 'example2', 1, 1],
+        [3, 'example3', 1, 1]
     ];
 
     values.forEach(value => {
@@ -91,18 +103,24 @@ db.serialize(() => {
 
     // CHARACTER
 
-    query = 'INSERT INTO character (picture, name, level, unlocked, profile_id) VALUES (?, ?, ?, ?, ?)';
+    query = 'INSERT INTO character (picture, name) VALUES (?, ?)';
 
     values = [
-        ['example', 'example', 1, 1, 1],
-        ['example2', 'example2', 1, 0, 1],
-        ['example3', 'example3', 1, 1, 2],
-        ['example4', 'example4', 1, 0, 3]
+        ['example', 'example'],
+        ['example2', 'example2'],
+        ['example3', 'example3'],
+        ['example4', 'example4']
     ];
 
     values.forEach(value => {
         db.run(query, value);
     });
+
+    db.run(
+        'INSERT INTO profile_character (character_id, profile_id, unlocked, level) ' +
+        'SELECT character.id, profile.id, CASE WHEN character.id = 1 THEN 1 ELSE 0 END, 1 ' +
+        'FROM character CROSS JOIN profile'
+    );
 
 
     // STAGE
